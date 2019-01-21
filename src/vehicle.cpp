@@ -1242,7 +1242,8 @@ void CheckVehicleBreakdown(Vehicle *v)
 	// If it's 150, we have a 4/150 chance of getting +26 and 100/150 chance of getting +1 (avg. 1.67/day)
 	// If it's 200, we have a 4/200 chance of getting +26 and 100/200 chance of getting +1 (avg. 1/day)
 	// ...
-	// just gotta configure reliability_mul as a game setting now now
+	// just gotta configure reliability_mul as a game setting now
+	// can I use the higher bits of _settings_game.difficulty.vehicle_breakdowns ?
 	
 	/*old was
 	int chance = v->breakdown_chance + 1;
@@ -1258,7 +1259,8 @@ void CheckVehicleBreakdown(Vehicle *v)
 	if (v->type == VEH_SHIP) rel += 0x6666;
 
 	/* reduced breakdowns? */
-	if (_settings_game.difficulty.vehicle_breakdowns == 1) rel += 0x6666;
+	if (_settings_game.difficulty.vehicle_breakdowns && 1) rel += 0x6666;
+	// if we reuse the same byte, have to tweak this bit too.
 
 	/* check if to break down */
 	if (_breakdown_chance[(uint)min(rel, 0xffff) >> 10] <= v->breakdown_chance) {
