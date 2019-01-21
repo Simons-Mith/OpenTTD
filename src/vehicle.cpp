@@ -1234,8 +1234,23 @@ void CheckVehicleBreakdown(Vehicle *v)
 	uint32 r = Random();
 
 	/* increase chance of failure */
+	int chance = v->breakdown_chance;
+	if (Chance16I(4, _settings_game.difficulty.reliability_multiplier, r)) chance += 25;
+	if (Chance16I(100, _settings_game.difficulty.reliability_multiplier, r)) chance += 1;
+	// multiplier is 100, 150, 200, 250,... (x1, x1.5, x2, ...)
+	// If it's 100, we have a 4/100 chance of getting +26 and 100/100 chance of getting +1 (avg. 2/day, as before)
+	// If it's 150, we have a 4/150 chance of getting +26 and 100/150 chance of getting +1 (avg. 1.67/day)
+	// If it's 200, we have a 4/200 chance of getting +26 and 100/200 chance of getting +1 (avg. 1/day)
+	// ...
+	// just gotta configure reliability_mul as a game setting now now
+	
+	/*old was
 	int chance = v->breakdown_chance + 1;
 	if (Chance16I(1, 25, r)) chance += 25;
+	// which meant +1 breakdown chance per day, guaranteed, and a 1/25 chance of another +25. Thus avg. increase +2 per day.
+	*/
+	
+	
 	v->breakdown_chance = min(255, chance);
 
 	/* calculate reliability value to use in comparison */
