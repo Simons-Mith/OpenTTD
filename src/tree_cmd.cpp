@@ -54,8 +54,10 @@ byte _trees_tick_ctr;
 
 /** At one tree to a tile, 64 trees per year per 256x256 tiles would take 1024 years to fill an empty map.
 But trees can grow up to 4 in one tile, and not all tiles are suitable for tree growth. So let's try 32 to start with.
+Having _monthly_tree_growth makes it easier to vary growth throughout the year.
 Maybe make the annual tree growth parameter accessible to players? **/
 uint16 _annual_tree_growth = ScaleByMapSize(32);
+uint16 _monthly_tree_growth = _annual_tree_growth / 12;
 uint16 _trees_growable = _annual_tree_growth;
 
 static const uint16 DEFAULT_TREE_STEPS = 1000;             ///< Default number of attempts for placing trees.
@@ -791,6 +793,77 @@ void OnTick_Trees()
 			_trees_growable -= 1;
 		}
 	}
+}
+
+/** Monthly loop for trees. */
+/** Allows for seasonal variations in growth. Would also be possible to have deciduous trees lose leaves in autumn, blossom in spring etc. **/
+/** Should use local month not calendar month - can have winter in June for the southern hemisphere then **/
+void TreesMonthlyLoop()
+{
+	/** This is /bonus/ tree growth; it's possible for trees to grow in January if _trees_growable still happens to be > 0.**/	
+	if (_settings_game.game_creation.landscape == LT_TEMPERATE) {
+		/* Temperate growth rate 12/12ths over the year, assumes northern hemisphere */
+		switch (_cur_month) {
+			case 0,1,11: // No bonus tree growth
+				break;
+			case 2,3,10: // Slow growth 1/36th per month
+				_trees_growable += _monthly_tree_growth / 3;
+				break;
+			case 4,5,6: // Moderate growth 1/12th per month
+				_trees_growable += _monthly_tree_growth;
+				break;
+			case 7,8: // Fast growth 3/12th per month
+				_trees_growable += _monthly_tree_growth * 3;
+				break;
+			case 9: // Medium-fast growth 2/12th per month
+				_trees_growable += _monthly_tree_growth * 2;
+				break;
+		}
+	}
+
+	if (_settings_game.game_creation.landscape == LT_ARCTIC) {
+		switch (_cur_month) {
+			/* Arctic growth rate 10/12ths over the year, assumes northern hemisphere */
+			case 0,1,2,3,4,9,10,11: // No bonus tree growth
+				break;
+			case 5,6,7: // Fast growth 3/12th per month
+				_trees_growable += _monthly_tree_growth * 3;
+				break;
+			case 8: // Moderate growth 1/12th per month
+				_trees_growable += _monthly_tree_growth;
+				break;
+		}
+	}
+
+	if (_settings_game.game_creation.landscape == LT_TROPIC) {
+		switch (_cur_month) {
+			/* Tropic growth rate 15/12ths over the year, extra in June/July/August */
+			case 0,1,2,3,4,8,9,10,11: // Moderate growth 1/12th per month
+				_trees_growable += _monthly_tree_growth;
+				break;
+			case 5,6,7: // Medium-fast growth 2/12th per month
+				_trees_growable += _monthly_tree_growth * 2;
+				break;
+		}
+	}
+		    
+	if (_settings_game.game_creation.landscape == LT_TOYLAND) {
+		switch (_cur_month) {
+			/* Toyand growth rate 12/12ths over the year, smoother than temperate, assumes northern hemisphere */
+			case 0,11: // No bonus tree growth
+				break;
+			case 1,10: // Slow growth 1/24th per month
+				_trees_growable += _monthly_tree_growth / 2;
+				break;
+			case 2,3,4,5,6,9: // Moderate growth 1/12th per month
+				_trees_growable += _monthly_tree_growth;
+				break;
+			case 7,8: // Medium-fast growth 2/12th per month
+				_trees_growable += _monthly_tree_growth * 2;
+				break;
+		}
+	}
+	if (_trees_growable > _annual_tree_growth) { _trees_growable = _annual_tree_growth; /* Use it or lose it */ }
 }
 
 static TrackStatus GetTileTrackStatus_Trees(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
