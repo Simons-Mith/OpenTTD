@@ -39,7 +39,7 @@
 enum TreePlacer {
 	TP_NONE,     ///< No tree placer algorithm
 	TP_ORIGINAL, ///< The original algorithm
-	TP_IMPROVED, ///< A 'improved' algorithm
+	TP_IMPROVED, ///< An 'improved' algorithm
 };
 
 /** Where to place trees while in-game? */
@@ -51,11 +51,12 @@ enum ExtraTreePlacement {
 
 /** Determines when to consider building more trees. */
 byte _trees_tick_ctr;
+uint16 _trees_growable;
+uint16 _annual_tree_growth;
 
 static const uint16 DEFAULT_TREE_STEPS = 1000;             ///< Default number of attempts for placing trees.
-static const uint16 DEFAULT_RAINFOREST_TREE_STEPS = 15000; ///< Default number of attempts for placing extra trees at rainforest in tropic.
+static const uint16 DEFAULT_RAINFOREST_TREE_STEPS = 15000; ///< Default number of attempts for placing extra trees at rainforest in tropic
 static const uint16 EDITOR_TREE_DIV = 5;                   ///< Game editor tree generation divisor factor.
-
 /**
  * Tests if a tile can be converted to MP_TREES
  * This is true for clear ground without farms or rocks.
@@ -713,6 +714,12 @@ static void TileLoop_Trees(TileIndex tile)
 			break;
 
 		case 6: // final stage of tree destruction
+
+			if (GetTropicZone(tile) != TROPICZONE_RAINFOREST) {
+				_trees_growable += 1;
+				/* if we're about to kill off a non-tropic tree, we'll be allowed to grow a replacement */
+			}
+
 			if (GetTreeCount(tile) > 1) {
 				/* more than one tree, delete it */
 				AddTreeCount(tile, -1);
@@ -770,11 +777,14 @@ void OnTick_Trees()
 	/* byte underflow */
 	if (--_trees_tick_ctr != 0 || _settings_game.construction.extra_tree_placement != ETP_ALL) return;
 
-	/* place a tree at a random spot */
-	r = Random();
-	tile = RandomTileSeed(r);
-	if (CanPlantTreesOnTile(tile, false) && (tree = GetRandomTreeType(tile, GB(r, 24, 8))) != TREE_INVALID) {
-		PlantTreesOnTile(tile, tree, 0, 0);
+	if (_trees_growable > 0) {
+		/* place a tree at a random spot */
+		r = Random();
+		tile = RandomTileSeed(r);
+		if (CanPlantTreesOnTile(tile, false) && (tree = GetRandomTreeType(tile, GB(r, 24, 8))) != TREE_INVALID) {
+			PlantTreesOnTile(tile, tree, 0, 0);
+			_trees_growable -= 1;
+		}
 	}
 }
 
