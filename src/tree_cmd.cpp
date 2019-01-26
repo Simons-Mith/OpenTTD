@@ -52,7 +52,7 @@ enum ExtraTreePlacement {
 /** Determines when to consider building more trees. */
 byte _trees_tick_ctr;
 
-/** At one tree to a tile, 64 trees per year per 256x256 tiles would take at 1024 years to fill an empty map.
+/** At one tree to a tile, 64 trees per year per 256x256 tiles would take 1024 years to fill an empty map.
 But trees can grow up to 4 in one tile, and not all tiles are suitable for tree growth. So let's try 32 to start with.
 Maybe make the annual tree growth parameter accessible to players? **/
 uint16 _annual_tree_growth = ScaleByMapSize(32);
