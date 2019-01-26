@@ -169,6 +169,7 @@ extern void TownsMonthlyLoop();
 extern void IndustryMonthlyLoop();
 extern void StationMonthlyLoop();
 extern void SubsidyMonthlyLoop();
+extern void TreesMonthlyLoop();
 
 extern void CompaniesYearlyLoop();
 extern void VehiclesYearlyLoop();
