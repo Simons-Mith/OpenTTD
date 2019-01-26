@@ -51,12 +51,17 @@ enum ExtraTreePlacement {
 
 /** Determines when to consider building more trees. */
 byte _trees_tick_ctr;
-uint16 _trees_growable;
-uint16 _annual_tree_growth;
+
+/** At one tree to a tile, 64 trees per year per 256x256 tiles would take at 1024 years to fill an empty map.
+But trees can grow up to 4 in one tile, and not all tiles are suitable for tree growth. So let's try 32 to start with.
+Maybe make the annual tree growth parameter accessible to players? **/
+uint16 _annual_tree_growth = ScaleByMapSize(32);
+uint16 _trees_growable = _annual_tree_growth;
 
 static const uint16 DEFAULT_TREE_STEPS = 1000;             ///< Default number of attempts for placing trees.
-static const uint16 DEFAULT_RAINFOREST_TREE_STEPS = 15000; ///< Default number of attempts for placing extra trees at rainforest in tropic
-static const uint16 EDITOR_TREE_DIV = 5;                   ///< Game editor tree generation divisor factor.
+static const uint16 DEFAULT_RAINFOREST_TREE_STEPS = 15000; ///< Default number of attempts for placing extra trees in tropical rainforests
+static const uint16 EDITOR_TREE_DIV = 5;                   ///< Game editor tree generation divisor factor
+
 /**
  * Tests if a tile can be converted to MP_TREES
  * This is true for clear ground without farms or rocks.
@@ -650,7 +655,7 @@ static void TileLoop_Trees(TileIndex tile)
 
 	uint treeCounter = GetTreeCounter(tile);
 
-	/* Handle growth of grass (under trees/on MP_TREES tiles) at every 8th processings, like it's done for grass on MP_CLEAR tiles. */
+	/* Handle growth of grass (under trees/on MP_TREES tiles) at every 8th processing, like it's done for grass on MP_CLEAR tiles. */
 	if ((treeCounter & 7) == 7 && GetTreeGround(tile) == TREE_GROUND_GRASS) {
 		uint density = GetTreeDensity(tile);
 		if (density < 3) {
@@ -717,7 +722,7 @@ static void TileLoop_Trees(TileIndex tile)
 
 			if (GetTropicZone(tile) != TROPICZONE_RAINFOREST) {
 				_trees_growable += 1;
-				/* if we're about to kill off a non-tropic tree, we'll be allowed to grow a replacement */
+				/* about to kill a non-tropic tree, which means we'll be allowed to grow a replacement later*/
 			}
 
 			if (GetTreeCount(tile) > 1) {
@@ -766,7 +771,7 @@ void OnTick_Trees()
 	TileIndex tile;
 	TreeType tree;
 
-	/* place a tree at a random rainforest spot */
+	/* Place a tree at a random rainforest spot */
 	if (_settings_game.game_creation.landscape == LT_TROPIC &&
 			(r = Random(), tile = RandomTileSeed(r), GetTropicZone(tile) == TROPICZONE_RAINFOREST) &&
 			CanPlantTreesOnTile(tile, false) &&
@@ -778,7 +783,7 @@ void OnTick_Trees()
 	if (--_trees_tick_ctr != 0 || _settings_game.construction.extra_tree_placement != ETP_ALL) return;
 
 	if (_trees_growable > 0) {
-		/* place a tree at a random spot */
+		/* Place a tree at a random spot */
 		r = Random();
 		tile = RandomTileSeed(r);
 		if (CanPlantTreesOnTile(tile, false) && (tree = GetRandomTreeType(tile, GB(r, 24, 8))) != TREE_INVALID) {
